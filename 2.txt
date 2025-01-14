@@ -1,0 +1,140 @@
+#include <fstream>
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct Tstudent
+{
+	char meno[20],priezvisko[20];
+	char znamka_M; // 'A', 'B', 'C', 'D', 'E', 'F'
+	int rodcis;
+};
+
+int JeZena(int c)
+{
+	c /= 1000; // odstranime posledne 3 cislice
+	c %= 10; // z toho, co zostalo, chceme poslednu
+	return c >= 5; // ak plati, je to zena, inak muz
+}
+
+int rok(int rc)
+{
+    int RR = (rc / 10000);
+	if (RR < 12) 
+        return RR + 2000;
+	else 
+        return RR + 1900;
+}
+
+void VypisDatum(int c)
+{
+	cout << c % 100 << ". ";
+	int mesiac = c / 100;
+	cout << mesiac % 50 << ". ";
+	rok(c);
+    cout << rok;
+}
+
+void vypis_studenta(Tstudent *s)
+{
+    cout<<s->priezvisko <<" "<<s->meno<<" \t("<<s->znamka_M<<") ";
+    cout<<"rod.c: "<<s->rodcis;
+    if (JeZena(s->rodcis))
+		cout << "zena, narodena ";
+	else
+		cout << "muz, narodeny ";
+    VypisDatum(s->rodcis);
+	cout << endl;   
+}
+
+void vypis_studentov(Tstudent **st, int poc) 
+{
+	for (int i = 0; i < poc; i++)
+		vypis_studenta(st[i]);
+}
+
+int PorovnajStudentov(Tstudent *s1, Tstudent *s2) 
+{
+	int porovnanie = strcmp(s1->priezvisko, s2->priezvisko);
+	if (porovnanie != 0) 
+		return porovnanie;
+	porovnanie = strcmp(s1->meno, s2->meno);
+	if (porovnanie != 0) 
+		return porovnanie;
+	if (s1->rodcis < s2->rodcis) 
+		return -1;
+	
+	return 0;
+
+}
+
+void InsertionSort(Tstudent **pole, int pocet) 
+{
+	int i, j;
+	Tstudent* tmp;
+	for (i = 1; i < pocet; i++) {
+		for (j = i, tmp = pole[i]; (j > 0) && PorovnajStudentov(tmp, pole[j - 1]); j--)
+			pole[j] = pole[j - 1];
+		pole[j] = tmp;
+	}
+}
+int main() 
+{
+	Tstudent **student = new Tstudent*[100];
+    int i = 0, pocet;
+	ifstream in;
+
+	in.open("studenti.txt");
+	if( !in )
+	{
+		cout<<"Subor sa nepodarilo otvorit";
+		return 0;
+	}
+
+	while( !in.eof() )
+	{
+		student[i] = new Tstudent;
+		in >> student[i]->meno >> student[i]->priezvisko >> student[i]->znamka_M >> student[i]->rodcis;
+		i++;
+	}
+
+    pocet = i-1;
+    cout << " neusporiadany zoznam " << pocet << " studentov zo suboru 'studenti.txt'" << endl;
+	vypis_studentov(student, pocet);
+    
+    InsertionSort(student, pocet);
+	cout << endl;
+	cout << "USPORIADANY zozn. " << pocet << " studentov zo sub. 'studenti.txt' funkciou 'InsertionSort'" << endl;
+	vypis_studentov(student, pocet);
+	cout << "------------------------------" << endl;
+	
+    cout << "vlozte rok narodenia hladanych studentov:";
+	int rok_hl;
+	cin >> rok_hl;
+    cout << "vlozte znamku, ktoru maju mat hladani studenti:";
+    char znamka;
+	cin >> znamka;
+	if (rok_hl >= 1912 && rok_hl <= 2011) 
+    {
+        Tstudent** nove= new Tstudent*[pocet];
+
+		int pocet_hlad = 0;
+		for (int i = 0; i < pocet; i++) 
+        {
+			if (rok(student[i]->rodcis) == rok_hl && student[i]->znamka_M == znamka) 
+            {
+				nove[pocet_hlad++] = student[i];
+			}
+		}
+		cout << "pocet a zoznam studentov narodenych v roku " << rok_hl << " so znamkou " << znamka << ": " << pocet_hlad << endl;
+		
+        vypis_studentov(nove, pocet_hlad);
+	}
+	else
+        cout << "pocet studentov narodenych v roku"<< rok_hl << "so znamkou" << znamka << ": "<< "0"<< endl;
+    
+    for (int i = 0; i < pocet; i++)
+		delete student[i];
+	delete[] student;
+    
+}
