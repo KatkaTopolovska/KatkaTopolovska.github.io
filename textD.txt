@@ -1,0 +1,528 @@
+Majme študentov a ich známky, pracujte so zoznamami
+
+(defglobal ?*fx* = 0)
+
+(deffacts znamky
+	(znamka Jano A B C D E)
+	(znamka Jozo C D B C B)
+	(znamka Palo C A FX A B)
+	(znamka Peter C FX FX E E)	
+)
+Urobte pravidlo , ktoré ak existuje aspoň jeden študent, ktorý má FX vypíše „máme študenta s FX“
+(defrule studentFX
+(znamka $?z)
+(test (member$ FX $?z))
+=>
+(printout t "mame studenta s FX" crlf)
+(bind ?*fx* (+ ?*fx* 1)) 
+)
+
+Urobte pravidlo alebo pravidlá, ktoré nám spočíta koľko máme študentov s FX
+(defrule kolko_student_FX
+=>
+(printout t "V zozname je " ?*fx* " studentov co ma FX" crlf)
+)
+
+Urobte pravidlo alebo pravidlá, ktoré nám zmenia hodnotenie z A,B,C,D,E,FX na číselné hodnotenie 1;1,5;2;2,5;3;4
+(defrule zmena_znamok
+(declare (salience -1))
+?vymazat <-(znamka $?z)
+(test (not (member$ 2 $?z)))
+=>
+(bind $?z (replace-member$ $?z 1 A))
+(bind $?z (replace-member$ $?z 1.5 B))
+(bind $?z (replace-member$ $?z 2 C))
+(bind $?z (replace-member$ $?z 2.5 D))
+(bind $?z (replace-member$ $?z 3 E))
+(bind $?z (replace-member$ $?z 4 FX))
+(printout t $?z crlf)
+(retract ?vymazat)
+(assert(znamka $?z))
+)
+
+Urobte pravidlo, ktoré vypočíta priemer študentom
+(defrule priemer
+(declare (salience -2))
+(znamka ?meno ?c1 ?c2 ?c3 ?c4 ?c5)
+=>
+(bind ?sucet (+ ?c1 ?c2 ?c3 ?c4 ?c5))
+(bind ?priemer (/ ?sucet 5))
+(printout t "Ziak " ?meno " ma priemer " $?priemer crlf)
+)
+ 
+Majme študentov a ich predmety a známky z predmetov, pracujte so šablónami
+(defglobal ?*fx* = 0)
+(defglobal ?*k* = 0)
+
+(deftemplate znamka
+	(slot meno (type SYMBOL))
+	(slot prog )
+	(slot uies )
+	(slot siete )
+	(slot upravene (type SYMBOL) (default nie))
+)
+
+(deffacts znamky
+(znamka
+		(meno Jano)
+		(prog FX)
+		(uies B)
+		(siete E))
+
+(znamka
+		(meno Jozo)
+		(prog C)
+		(uies D)
+		(siete B))
+)
+
+Urobte pravidlo , ktoré ak existuje aspoň jeden študent, ktorý má FX vypíše „máme študenta s FX“
+(defrule zadanie_studentov
+=>
+(loop-for-count 2 
+(printout t "zadajte meno studenta" crlf)
+(bind ?m (read))
+(printout t "zadajte znamku z programovania" crlf)
+(bind ?zp (read))
+(printout t "zadajte znamku z uies" crlf)
+(bind ?zu (read))
+(printout t "zadajte znamku z siete" crlf)
+(bind ?zs (read))
+
+(assert (znamka (meno ?m) (prog ?zp) (uies ?zu) (siete ?zs)))
+)
+)
+
+Urobte pravidlo alebo pravidlá, ktoré nám spočíta koľko máme študentov s FX
+(defrule studentFX
+(znamka (prog ?z1) (uies ?z2) (siete ?z3))
+(test (or (eq FX ?z1) (eq FX ?z2) (eq FX ?z3)))
+=>
+(bind ?*fx* (+ ?*fx* 1)) 
+)
+
+(defrule kolko_student_FX
+=>
+(printout t "V sablone je " ?*fx* " studentov co ma FX" crlf)
+)
+
+Urobte pravidlo alebo pravidlá, ktoré nám zmenia hodnotenie z A,B,C,D,E,FX na číselné hodnotenie 1;1,5;2;2,5;3;4
+(defrule student_zmena_znamky
+(declare (salience -1))
+?z<-(znamka (meno ?m) (prog ?z1) (uies ?z2) (siete ?z3) (upravene ?u))
+(test (eq ?u nie))
+=>
+(if (eq ?z1 A) then (bind ?z1 1))
+(if (eq ?z2 A) then (bind ?z2 1))
+(if (eq ?z3 A) then (bind ?z3 1))
+
+(if (eq ?z1 B) then (bind ?z1 1.5))
+(if (eq ?z2 B) then (bind ?z2 1.5))
+(if (eq ?z3 B) then (bind ?z3 1.5))
+
+(if (eq ?z1 C) then (bind ?z1 2))
+(if (eq ?z2 C) then (bind ?z2 2))
+(if (eq ?z3 C) then (bind ?z3 2))
+
+(if (eq ?z1 D) then (bind ?z1 2.5))
+(if (eq ?z2 D) then (bind ?z2 2.5))
+(if (eq ?z3 D) then (bind ?z3 2.5))
+
+(if (eq ?z1 E) then (bind ?z1 3))
+(if (eq ?z2 E) then (bind ?z2 3))
+(if (eq ?z3 E) then (bind ?z3 3))
+
+(if (eq ?z1 FX) then (bind ?z1 4))
+(if (eq ?z2 FX) then (bind ?z2 4))
+(if (eq ?z3 FX) then (bind ?z3 4))
+
+(modify ?z (prog ?z1) (uies ?z2) (siete ?z3) (upravene ano))
+)
+
+Urobte pravidlo, ktoré vypočíta priemer študentom
+(defrule priemer
+(declare (salience -2))
+(znamka (meno ?m) (prog ?z1) (uies ?z2) (siete ?z3))
+=>
+(bind ?sucet (+ ?z1 ?z2 ?z3))
+(bind ?priemer (/ ?sucet 3))
+(printout t "Ziak " ?m " ma priemer " ?priemer crlf)
+)
+ 
+Majme fakty, pracujte so šablónami
+Správne vytvorenú šablónu aj s udaním dátových typov a rozpätím rozpočtu od 1000 do 50000
+(defglobal ?*s* = 0)
+(defglobal ?*p* = 0)
+
+(deftemplate film
+	(slot nazov_filmu (type STRING))
+	(slot reziser (type STRING))
+	(multislot herci (type STRING) (default "nic"))
+	(slot rozpocet (type INTEGER) (range 1000 50000))
+	(slot rok (type INTEGER))
+)
+
+(deffacts filmy
+(film
+		(nazov_filmu "Janosik")
+		(reziser "Pavol Bielik")
+		(herci "Pavol Bielik" "Stefan Kvietik" "Magda Vasaryova"  "Zdena Studenkova" "Katarina Kolnikova" "Vlado Muller")
+		(rozpocet 1000)
+		(rok 1971))
+
+(film
+		(nazov_filmu "Dracie diery")
+		(reziser "Marek Tapak")
+		(herci "Emilia Vasaryova" "Frantisek Dibarbora" "Juraj Kukura" "Vlado Muller" "Sona Valentova" "Mikulas Huba")
+		(rozpocet 49000)
+		(rok 1975))
+(film
+		(nazov_filmu "Panelak")
+		(reziser "Stefan Skrucany")
+		(herci "Zdena Studenkova" "Jozo Vajda" "Zuzana Kocurikova" "Magda Vasaryova")
+		(rozpocet 30000)
+		(rok 2012))
+)
+
+Urobte pravidlo, ktoré načíta od užívateľa ďalšie dva filmy, pričom do jedného filmu nevložíte rozpočet a do druhého nevložíte hercov
+(defrule zadanie_filmov
+=>
+(printout t "zadajte meno filmu" crlf)
+(bind ?m (readline))
+(printout t "zadajte meno rezisera" crlf)
+(bind ?r (readline))
+(printout t "zadajte hercov filmu (v uvodzovkach, medzerou rozdeleni)" crlf)
+(bind ?h (readline))
+(printout t "zadajte rok vydania filmu" crlf)
+(bind ?rok (read))
+(assert (film (nazov_filmu ?m) (reziser ?r) (herci (explode$ ?h)) (rok ?rok)))
+
+(printout t "zadajte meno filmu" crlf)
+(bind ?m (readline))
+(printout t "zadajte meno rezisera" crlf)
+(bind ?r (readline))
+(printout t "zadajte rozpocet filmu" crlf)
+(bind ?roz (read))
+(printout t "zadajte rok vydania filmu" crlf)
+(bind ?rok (read))
+(assert (film (nazov_filmu ?m) (reziser ?r) (rozpocet ?roz) (rok ?rok)))
+)
+
+Urobte pravidlo alebo pravidlá, ktoré nám vypíše koľko máme hercov v každom filme a počty uloží do bázy faktov aj s názvom filmu
+(defrule pocet_hercov
+(declare (salience -2))
+(film (nazov_filmu ?n) (herci $?h))
+=>
+(bind ?ph (length$ $?h))
+(printout t "film " ?n " ma hercov " ?ph crlf)
+(assert (movie ?n ?ph))
+)
+
+Urobte pravidlo alebo pravidlá, ktoré vytvorí cez create zoznam hercov Marián Labuda, Milan Lasica, Maroš Kramár, zoznam herečiek Zuzana Krónerová, Zuzana Fialová a vloží do vami načítaného filmu, kde nie sú herci
+(defrule vlozenie_hercov
+(declare (salience -1))
+?f<-(film (herci $?h))
+(test (member$ "nic" $?h))
+=>
+(bind $?nh (create$ "Marian Labuda" "Milan Lasica"))
+(modify ?f (herci $?nh))
+)
+
+Urobte pravidlo alebo pravidlá, ktoré spočíta, koľko financií sa priemerne minulo na jeden film
+(defrule sucet_financii
+(film (rozpocet ?r))
+=>
+(bind ?*s* (+ ?*s* ?r))
+(bind ?*p* (+ ?*p* 1))
+)
+
+(defrule priemer_financii
+=>
+(bind ?pr (/ ?*s* ?*p*))
+(printout t "priemer financii na jeden film je " ?pr crlf)
+)
+ 
+Majme zadanie a vytvorte program, ktorý rieši nasledovné úlohy:
+Použite šablóny na definovanie faktov a nastavte preddefinovaný plat zamestnancovi na 500€ a povolené oddelenia IT, obchodné, manažment; pracujte so symbolmi 
+(deftemplate zamestnanec
+	(slot meno (type SYMBOL))
+	(multislot oddelenie (type SYMBOL) (allowed-symbols IT obchodne manazment))
+	(multislot funkcia (type SYMBOL))
+	(multislot plat (type INTEGER) (default 500))
+	(slot upraveny (type INTEGER) (default 0))
+)
+
+(deffacts zamestnaneci
+(zamestnanec
+	(meno Jozo)
+	(oddelenie obchodne)
+	(funkcia zamestnanec)
+	(plat 900))
+(zamestnanec
+	(meno Jano)
+	(oddelenie IT)
+	(funkcia veduci)
+	(plat 1500))
+(zamestnanec
+	(meno Hana)
+	(oddelenie IT obchodne)
+	(funkcia zamestnanec zamestnanec)
+	(plat 600 400))
+(zamestnanec
+	(meno Kata)
+	(oddelenie obchodne manazment)
+	(funkcia veduci zamestnanec)
+	(plat 1200 300))
+(zamestnanec
+	(meno Fero)
+	(oddelenie manazment)
+	(funkcia veduci)
+	(plat 1800))
+)
+
+Urobte pravidlo, ktoré od užívateľa načíta nového zamestnanca od oddelenia IT a nenačítajte mu zatiaľ žiadnu mzdu
+(defrule zadanie_zamestnanca
+=>
+(printout t "zadajte meno zamestnanca" crlf)
+(bind ?m (read))
+(assert (zamestnanec (meno ?m) (oddelenie IT) (funkcia zamestnanec)))
+)
+
+Vyriešte úlohu, ktorá vykoná to, že Hana nebude zamestnaná na oddelení IT ale iba na obchodnom oddelení a jej plat bude 1000€
+(defrule zmena_hana
+?z<-(zamestnanec (meno ?m) (oddelenie $?o) (funkcia $?f) (plat $?p))
+(test (eq ?m Hana))
+(test (not (member$ 1000 $?p)))
+=>
+(bind $?pica (delete-member$ $?o IT))
+(modify ?z (oddelenie $?pica) (funkcia zamestnanec) (plat 1000))
+)
+
+Urobte pravidlo, ktoré vypočíta priemerný plat zamestnancov pre ľubovoľný počet zamestnancov
+(defglobal ?*s* = 0)
+(defglobal ?*p* = 0)
+
+(defrule sucet_plat
+(declare (salience -1))
+(zamestnanec (plat ?p1 ?p2))
+=>
+(bind ?*s* (+ ?*s* ?p2))
+)
+
+(defrule sucet_plat2
+(declare (salience -2))
+(zamestnanec (plat ?p))
+=>
+(bind ?*s* (+ ?*s* ?p))
+(bind ?*p* (+ ?*p* 1))
+)
+
+(defrule priemer_plat
+(declare (salience -3))
+=>
+(bind ?pp (/ ?*s* ?*p*))
+(printout t "priemerny plat zamestnancov je " ?pp crlf)
+)
+
+Urobte užívateľskú funkciu, kde bude switch, ktorý ak má zamestnanec plat 900, tak mu ho zmení na 1000, ak má plat 1800, tak mu ho zmení na 2000, ak má plat 1500, tak mu ho zmení na 1600 a ak má plat 1000, tak ho zmení na 1100. Zavolajte túto funkciu v pravidle, ktoré vypíše zmenené mzdy.
+(defrule zmena_plat
+(declare (salience -4))
+?z<-(zamestnanec (plat ?p) (upraveny ?u))
+(test (eq ?u 0))
+=>
+(bind ?np ?p)
+(switch ?p
+(case 900 then (bind ?np 1000))
+(case 1800 then (bind ?np 2000))
+(case 1500 then (bind ?np 1600))
+(case 1000 then (bind ?np 1100))
+(default none))
+(modify ?z (plat ?np) (upraveny 1))
+)
+ 
+Majme triedy, kde máme triedu, triedneho učiteľa, študentov a priemer triedy, pracujte so zoznamami
+(deffacts znamky
+	(trieda 3A Maria Podhradska Jano Jozo Miso Kata Kata Hana Jozo 2.5)
+	(trieda 4A Martin Mokry Fero Jozo Kata Hana Jozo Jazo 3.33)
+	(trieda 5A Zuza Cervena Kata Hana Miso Fero Jano 1.5)
+)
+
+Vytvorte pravidlo, ktoré pomocou create vytvorí a vloží do bázy faktov ďalšiu triedu, kde nebude priemer triedy, bude to 2A a učiteľ bude Fero Mrkva a študenti sú Mišo, Zuza, Kata, Hana.
+(defrule prva_uloha
+=>
+(bind $?c (create$ 2A Fero Mrkva Miso Zuza Kata Hana))
+(assert (trieda $?c))
+)
+
+Vieme, že v 2A má Mišo známku 2, Zuza 3, Kata 1, Hana 4. Spravte pravidlo alebo pravidlá, ktoré vypočíta priemer známok týchto študentov a vloží ich na koniec zoznamu triedy 2A
+(defglobal ?*upr* = 0)
+
+(defrule druha_uloha
+(declare (salience -1))
+?v<-(trieda $?trieda)
+(test (and(member$ 2A $?trieda) (eq ?*upr* 0)))
+=>
+(bind ?p (/ (+ 2 3 1 4) 4))
+(retract ?v)
+(assert(trieda $?trieda ?p))
+(bind ?*upr* 1)
+)
+
+Vypíšte triedu s najlepším priemerom
+nefunguje
+(defglobal ?*t* = A3)
+(defglobal ?*pr* = 1000000000000)
+
+(defrule tretia_uloha
+(declare (salience -2))
+(trieda ?prve ?$ostatne ?posledne)
+(test (> ?*pr* ?posledne))
+=>
+(bind ?*pr* ?posledne)
+(bind ?*t* ?prve)
+)
+
+(defrule tretia_uloha2
+(declare (salience -3))
+=>
+(printout t "najmensi priemer ma trieda " ?*t* " a to " ?*pr* crlf)
+)
+
+Vytvorte pravidlo, alebo pravidlá, ktoré nám spočítajú koľko študentiek má meno Kata vo všetkých triedach
+(defglobal ?*k* = 0)
+
+(defrule stvrta_uloha
+(trieda $?zaciatok ?k $?koniec)
+=>
+(if (eq ?k Kata) then (bind ?*k* (+ ?*k* 1)))
+)
+
+(defrule stvrta_uloha2
+=>
+(printout t "V triede je tolkoto katiek " ?*k* crlf)
+)
+ 
+Majme fakty, ktoré popisujú byty s atribútmi
+(deftemplate byt
+(slot mesto(type SYMBOL))
+(slot cena(type INTEGER)) 
+(slot poschodie(type INTEGER)) 
+(multislot miestnosti(type SYMBOL)) ;pouzili sme multislot aby mohla byt viacero premennych v polozke zoznamu
+(multislot roz_kuchyna (type INTEGER))
+(multislot roz_obyvacka (type INTEGER))
+(multislot roz_spalna_1 (type INTEGER))
+(multislot roz_spalna_2 (type INTEGER))
+(multislot roz_satnik (type INTEGER))
+(slot plocha (type INTEGER))
+(slot upravene (type INTEGER) (default 0)) 
+)
+
+(deftemplate atributy
+(slot cena(type INTEGER)) 
+(slot plocha(type INTEGER)) 
+)
+;vytvorili sme si sablony pre potrebne fakty v baze faktov 
+;(aj vlastnosti ktore zada uzivatel)
+
+;**********************BAZA FAKTOV******************
+
+(deffacts byty
+	(byt (mesto Bratislava)
+		(cena 105000)
+		(poschodie 4)
+		(miestnosti kuchyna obyvacka spalna_1 spalna_2 satnik)
+		(roz_kuchyna 3 3)
+		(roz_obyvacka 5 5)
+		(roz_spalna_1 3 3)
+		(roz_spalna_2 3 4)
+		(roz_satnik 2 2)
+		(plocha 1)
+		)
+	(byt (mesto Piestany)
+		(cena 90000)
+		(poschodie 2)
+		(miestnosti kuchyna spalna_1 spalna_2 obyvacka)
+		(roz_kuchyna 3 4)
+		(roz_obyvacka 0 0)
+		(roz_spalna_1 3 4)
+		(roz_spalna_2 4 4)
+		(roz_satnik 0 0)
+		(plocha 1)
+		)
+	(byt (mesto Puchov)
+		(cena 72000)
+		(poschodie 5)
+		(miestnosti spalna_1 obyvacka)
+		(roz_kuchyna 0 0)
+		(roz_obyvacka 5 6)
+		(roz_spalna_1 3 4)
+		(roz_spalna_2 0 0)
+		(roz_satnik 0 0)
+		(plocha 1)
+		)
+	(byt (mesto Bratislava)
+		(cena 98000)
+		(poschodie 2)
+		(miestnosti kuchyna obyvacka spalna_1 spalna_2) 
+		(roz_kuchyna 4 4)
+		(roz_obyvacka 4 4)
+		(roz_spalna_1 3 3)
+		(roz_spalna_2 3 4)
+		(roz_satnik 0 0)
+		(plocha 1)
+		)
+)
+;fakty vytvorene podla zadania
+
+;**********************BAZA PRAVIDIEL******************
+
+Urobte pravidlo, ktoré načíta od užívateľa atribúty bytu aký by chcel a uloží ho do bázy faktov
+(defrule zadanie_atributov
+=>
+(printout t "Zadajte najvyssiu cenu ktoru ste ochotny dat za byt: " crlf)
+(bind ?z_cena (read))
+(printout t "Zadajte najnizsiu plochu bytu ktoru za danu cenu chcete: " crlf)
+(bind ?z_plocha (read))
+(assert (atributy (cena ?z_cena) (plocha ?z_plocha)))
+)
+;zacali sme bazu pravidiel s udajmi ktore zada uzivatel
+;funkcia read precita co zadal uzivatel, potom funckia bind tieto udaje viaze na premennu
+
+Urobte pravidlo alebo pravidlá, ktoré vypočítajú plochu bytov a v báze faktov sa pridajú plochy bytov
+(defrule pocitane_plochy
+?bytik<-(byt (plocha ?p) (roz_kuchyna ?c1 ?c2) (roz_obyvacka ?c3 ?c4) (roz_spalna_1 ?c5 ?c6) (roz_spalna_2 ?c7 ?c8) (roz_satnik ?c9 ?c10) (upravene ?u))
+(test (eq 0 ?u))
+=>
+(bind ?vypocitana_plocha(+ (* ?c1 ?c2) (* ?c3 ?c4) (* ?c5 ?c6) (* ?c7 ?c8) (* ?c9 ?c10)))
+(modify ?bytik (plocha ?vypocitana_plocha) (upravene 1))
+)
+
+Urobte pravidlo, ktoré nájde užívateľovi, či existuje v báze faktov byt, ktorý by on chcel, pravidlo vypíše všetky atribúty daného bytu alebo napíše, že taký byt nie je k dispozícii
+(defglobal ?*k* = 0)
+
+(defrule hladanie_bytu
+(atributy (cena ?z_cena) (plocha ?z_plocha))
+(byt (mesto ?mesto) (cena ?cena) (poschodie ?poschodie)(miestnosti $?miestnosti) (plocha ?plocha))
+(test (and ( < ?z_plocha ?plocha) ( > ?z_cena ?cena)))
+=>
+(printout t "nasli sme vam byt s takymito vlastnostami: " crlf)
+(printout t mesto crlf ?cena crlf ?poschodie crlf $?miestnosti crlf ?plocha crlf)
+(bind ?*k* 1)
+)
+
+(defrule neuspesne_hladanie_bytu
+(declare (salience -1))
+(test (neq ?*k* 1)) 
+=>
+(printout t "Nepodarilo sa najst byt s pozadovanymi vlastnostami " crlf)
+)
+
+Urobte pravidlo, ktoré vytvorí zoznam plôch všetkých bytov cez create a vloží do bázy faktov
+(defrule zoznam_ploch
+(declare(salience -1))
+?bytik<-(byt (mesto ?m) (plocha ?p))
+=>
+(bind $?sus (create$ ?m ?p))
+(assert (plochy $?sus))
+)
+ 
