@@ -1,463 +1,107 @@
-#include<fstream>
-#include<iostream>
-using namespace std;
-//#define VYMEN
-
-struct TStudent
-{
-	char meno[30], priezvisko[30];
-	int RC, body;
-	char bydlisko[30];
-	int km;
-};
-
-int rok(int rc) {
-	int r = (rc / 10000);
-	if (r < 17)
-		return r += 2000;
-	else return r += 1900;
-}
-
-int den(int rc) {
-	return rc % 100;
-}
-
-int mesiac(int rc) {
-	int mesiac = (rc / 100) % 100;
-	if (mesiac > 50)
-		return mesiac - 50;
-	return mesiac;
-}
-
-int PorovnajStudentov(TStudent* s1, TStudent* s2) {
-	// Porovnanie podľa počtu bodov (zostupne)
-	if (s1->body > s2->body)
-		return 1;
-	if (s1->body < s2->body)
-		return -1;
-
-	// Ak majú rovnaký počet bodov, porovnanie podľa vzdialenosti (zostupne)
-	if (s1->km > s2->km)
-		return 1;
-	if (s1->km < s2->km)
-		return -1;
-
-	// Ak majú rovnaký počet bodov a vzdialenosť, porovnanie podľa veku (mladší pred starším)
-	if (s1->RC / 10000 > s2->RC / 10000) // Väčšie rodné číslo znamená mladší
-		return 1;
-	if (s1->RC / 10000 < s2->RC / 10000)
-		return -1;
-
-	// Ak sú všetky kritériá rovnaké, vráť 0
-	return 0;
-}
-
-
-void BubbleSort(TStudent** data, int pocet) {
-	int i, j;
-
-	for (i = 1; i < pocet; i++) {
-		for (j = pocet - 1; j >= i; j--) {
-			// Ak prvok naľavo je "väčší", vymeníme ich
-			if (PorovnajStudentov(data[j - 1], data[j]) < 0) {
-				TStudent* temp = data[j];
-				data[j] = data[j - 1];
-				data[j - 1] = temp;
-			}
-		}
-	}
-}
-
-
-int JeZena(int c)
-{
-	c /= 1000; // odstranime posledne 3 cislice
-	c %= 10; // z toho, co zostalo, chceme poslednu
-	return c >= 5; // ak plati, je to zena, inak muz
-}
-
-void VypisDatum(int c)
-{
-	cout << den(c) << "." << mesiac(c) << "." << rok(c);
-}
-
-void vypis_studenta(TStudent* s) {
-	cout << s->priezvisko << " " << s->meno << "\t(" << s->body << ") " << s->RC << ",  ";
-	if (JeZena(s->RC))
-		cout << "z, ";
-	else cout << "m, ";
-	VypisDatum(s->RC);
-	cout << "\t" << s->bydlisko << "\t\t(" << s->km << ")" << endl;
-}
-
-void vypis_studentov(TStudent** st, int poc) {
-	for (int i = 0; i < poc; i++)
-		vypis_studenta(st[i]);
-}
-
-int najdi_studenta(TStudent* s, char pohl, int body_ub, char* mesto) {
-	char pohlavie;
-	char mesto_male[31];      // Na uloženie mesta s malými písmenami
-	char bydlisko_male[31];   // Na uloženie bydliska s malými písmenami
-
-	// Prevod mesta na malé písmená
-	int i = 0;
-	while (mesto[i] != '\0') {
-		mesto_male[i] = tolower(mesto[i]);
-		i++;
-	}
-	mesto_male[i] = '\0'; // Ukončenie reťazca
-
-	// Prevod bydliska študenta na malé písmená
-	i = 0; // Znova použijeme premennú i
-	while (s->bydlisko[i] != '\0') {
-		bydlisko_male[i] = tolower(s->bydlisko[i]);
-		i++;
-	}
-	bydlisko_male[i] = '\0'; // Ukončenie reťazca
-
-	// Zistenie pohlavia na základe rodného čísla
-	if (JeZena(s->RC))
-		pohlavie = 'z';
-	else
-		pohlavie = 'm';
-
-	// Porovnanie podmienok
-	if (pohlavie == pohl && (s->body <= body_ub) && strcmp(mesto_male, bydlisko_male) == 0)
-		return 1;
-
-	return 0;
-}
-
-
-int main() {
-
-	int i = 0, j;
-
-	ifstream in;
-	in.open("studenti.txt");
-	if (!in) {
-		cout << "nepodarilo sa otvorit subor!";
-		return 0;
-	}
-	
-	TStudent** studenti = new TStudent* [100];
-
-	while (!in.eof() && i <100) {
-		studenti[i] = new TStudent;
-		in >> studenti[i]->meno >> studenti[i]->priezvisko >> studenti[i]->RC >> studenti[i]->body >> studenti[i]->bydlisko >> studenti[i]->km;
-		i++;
-	}
-
-	in.close();
-
-	cout << "neusporiadany zoznam " << i << " studentov zo suboru:" << endl;
-	vypis_studentov(studenti, i);
-	cout << "\n\n";
-
-	BubbleSort(studenti, i);
-	cout << "usporiadany zoznam " << i << " studentov zo suboru:"<<endl;
-	vypis_studentov(studenti, i);
-	cout << "\n\n";
-
-	char hladane_pohlavie, hladane_bydlisko[30];
-	int hladane_body;
-
-	cout << "-------------------------------------------";
-	cout << "\nvlozte pohlavie hladanych studentov (zena(z)/muz(m)): ";
-	cin >> hladane_pohlavie;
-	cout << "\nvlozte maximalny pocet bodov za ubytovanie hladanych studentov: ";
-	cin >> hladane_body;
-	cout << "\nvlozte bydlisko hladanych studentov: ";
-	cin >> hladane_bydlisko;
-
-	int pocet_najdenych = 0;
-
-	for (j = 0; j < i; j++) {
-
-		if (najdi_studenta(studenti[j], hladane_pohlavie, hladane_body, hladane_bydlisko)) {
-			vypis_studenta(studenti[j]);
-			pocet_najdenych++;
-		}
-	}
-	
-	cout << "\npocet najdenych studentov s pohlavim '" << hladane_pohlavie << "', maximalnymi bodmi za ubytovanie '";
-	cout << hladane_body << "' a s bydliskom '" << hladane_bydlisko << "': " << pocet_najdenych << endl;
-
-	for (j = 0; j < i; j++)
-		delete studenti[j];
-
-	delete[] studenti;
-
-	return 0;
-}
-
-
-
-#include<iostream>
-using namespace std;
-
-class FirmaBazar {
-private:
-	char nazov_firmy[30], pravna_forma[10], sidlo_firmy[30];
-	long int ICO;
-
-public:
-	FirmaBazar() {};
-	FirmaBazar(const char* nf, const char* pf, const char* sidlo, long int ico);
-	void ZmenNazov(char* nf);
-	void ZmenPrafor(char* pf);
-	void ZmenSidlo(char* sidlo);
-	void ZmenIco(long int ico);
-	char* VratNazov();
-	char* VratPF();
-	char* VratSidlo();
-	long int VratIco();
-};
-
-class Notebook : public FirmaBazar {
-private:
-	char znacka[30];
-	int rok_vyroby;
-	int pocet_jadierCPU;
-	int kapacitaRAM;
-	int kapacitaHDD;
-	int predaj_cis_ntb;
-	long int cena_ntb;
-
-public:
-	Notebook() {}
-	Notebook(const char* nf, const char* pf, const char* sidlo, long int ico, const char* ztyp, int rok, int cpu, int ram, int hdd, int pcislo, long int pcena);
-	void ZmenZnackaTyp(char* ztyp);
-	void ZmenRokVyroby(int rok);
-	void ZmenCpu(int cpu);
-	void ZmenRam(int ram);
-	void ZmenHdd(int hdd);
-	void ZmenPredajCislo(int pcislo);
-	void ZmenPredajCena(long int pcena);
-	char* VratZnackaTyp();
-	int VratRokVyroby();
-	int VratCpu();
-	int VratRam();
-	int VratHdd();
-	int VratPredajCislo();
-	long int VratPredajCena();
-
-	friend ostream& operator<<(ostream& vyst_prud, Notebook a);
-};
-
-
-
-FirmaBazar::FirmaBazar(const char* nf, const char* pf, const char* sidlo, long int ico){
-	strcpy(nazov_firmy, nf);
-	strcpy(pravna_forma, pf);
-	strcpy(sidlo_firmy, sidlo);
-	ICO = ico;
-}
-
-Notebook::Notebook(const char* nf, const char* pf, const char* sidlo, long int ico, const char* ztyp, int rok, int cpu, int ram, int hdd, int pcislo, long int pcena)
-	:FirmaBazar(nf, pf, sidlo, ico){
-	strcpy(znacka, ztyp);
-	rok_vyroby = rok;
-	pocet_jadierCPU = cpu;
-	kapacitaRAM = ram;
-	kapacitaHDD = hdd;
-	predaj_cis_ntb = pcislo;
-	cena_ntb = pcena;
-}
-
-void FirmaBazar::ZmenNazov(char* nf){
-	strcpy(nazov_firmy, nf);
-}
-
-void FirmaBazar::ZmenPrafor(char* pf){
-	strcpy(pravna_forma, pf);
-}
-
-void FirmaBazar::ZmenSidlo(char* sidlo){
-	strcpy(sidlo_firmy, sidlo);
-}
-
-void FirmaBazar::ZmenIco(long int ico){
-	ICO = ico;
-}
-
-void Notebook::ZmenZnackaTyp(char* ztyp){
-	strcpy(znacka, ztyp);
-}
-
-void Notebook::ZmenRokVyroby(int rok){
-	rok_vyroby = rok;
-}
-
-void Notebook::ZmenCpu(int cpu){
-	pocet_jadierCPU = cpu;
-}
-
-void Notebook::ZmenRam(int ram){
-	kapacitaRAM = ram;
-}
-
-void Notebook::ZmenHdd(int hdd){
-	kapacitaHDD = hdd;
-}
-
-void Notebook::ZmenPredajCislo(int pcislo){
-	predaj_cis_ntb = pcislo;
-}
-
-void Notebook::ZmenPredajCena(long int pcena){
-	cena_ntb = pcena;
-}
-
-char* FirmaBazar::VratNazov(){
-	return nazov_firmy;
-}
-
-char* FirmaBazar::VratPF(){
-	return pravna_forma;
-}
-
-char* FirmaBazar::VratSidlo(){	
-	return sidlo_firmy;
-}
-
-long int FirmaBazar::VratIco(){
-	return ICO;
-}
-
-char* Notebook::VratZnackaTyp(){
-	return znacka;
-}
-
-int Notebook::VratRokVyroby(){
-	return rok_vyroby;
-}
-
-int Notebook::VratCpu(){
-	return pocet_jadierCPU;
-}
-
-int Notebook::VratRam(){
-	return kapacitaRAM;
-}
-
-int Notebook::VratHdd(){
-	return kapacitaHDD;
-}
-
-int Notebook::VratPredajCislo(){
-	return predaj_cis_ntb;
-}
-
-long int Notebook::VratPredajCena(){
-	return cena_ntb;
-}
-
-ostream& operator<<(ostream& vyst_prud, Notebook a)
-{
-	vyst_prud 
-		<< "nazov firmy prevadzkujucej bazar: " << a.VratNazov() << endl
-		<< "sidlo firmy prevadzkujucej bazar: " << a.VratSidlo() << endl
-		<< "znacka a typ notebooku: " << a.VratZnackaTyp() << endl
-		<< "rok vyroby notebooku:j " << a.VratRokVyroby() << endl
-		<< "pocet jadier notebooku: " << a.VratCpu() << endl
-		<< "kapacita RAM notebooku [Gb]:´" << a.VratRam() << endl
-		<< "kapacita pevneho disku notebooku [Mb]: " << a.VratHdd() << endl
-		<< "predajne cislo: " << a.VratPredajCislo() << endl
-		<< "predajna cena [Eur]: " << a.VratPredajCena() << endl;
-	return vyst_prud;
-}
-
-
-
-int main() {
-
-	char firma[30], pravnaforma[10], sidlo[30], znacka[30];
-	int  cpu, ram, hdd, p_cislo;
-	long int i, ico, rok, pocet, cena, celkova_cena = 0, priemer_cena =0;
-	
-	cout << "kolko notebookov chcete vkladat do programu: ";
-	cin >> pocet;
-
-	Notebook* notebooky = new Notebook[pocet];
-
-	for (i = 0; i < pocet; i++){
-
-		cout << "vlozte nazov firmy prevadzkujucej bazar: ";
-		cin >> firma;
-		cout << "vlozte pravnu formu firmy prevadzkujucej bazar: ";
-		cin >> pravnaforma;
-		cout << "vlozte sidlo firmy prevadzkujucej bazar: ";
-		cin >> sidlo;
-		cout << "Vlozte ICO firmy prevadzkujucej bazar: ";
-		cin >> ico;
-		cout << "vlozte znacku a typ notebooku: ";
-		cin >> znacka;
-		cout << "vlozte rok vyroby notebooku: ";
-		cin >> rok;
-		cout << "vlozte pocet jadier procesora notebooku: ";
-		cin >> cpu;
-		cout << "vlozte kapacitu RAM v Gb notebooku: ";
-		cin >> ram;
-		cout << "vlozte kapacitu pevneho disku v Mb notebooku: ";
-		cin >> hdd;
-		cout << "vlozte predajne cislo predavaneho  notebooku:   ";
-		cin >> p_cislo;
-		cout << "vlozte predajnu cenu notebooku [Eur]: ";
-		cin >> cena;
-
-		notebooky[i].ZmenNazov(firma);
-		notebooky[i].ZmenPrafor(pravnaforma);
-		notebooky[i].ZmenSidlo(sidlo);
-		notebooky[i].ZmenIco(ico);
-		notebooky[i].ZmenZnackaTyp(znacka);
-		notebooky[i].ZmenRokVyroby(rok);
-		notebooky[i].ZmenCpu(cpu);
-		notebooky[i].ZmenRam(ram);
-		notebooky[i].ZmenHdd(hdd);
-		notebooky[i].ZmenPredajCislo(p_cislo);
-		notebooky[i].ZmenPredajCena(cena);
-
-		i++;
-	}
-
-	Notebook ASUS("Happy_Bazar", "s.r.o.", "Trnava", 19836989, "ASUSx-FR7", 2012, 2, 2, 750, 9897421, 130);
-	Notebook HP("ABC_Bazar", "s.r.o.", "Trencin", 12787701, "HPx-GS9", 2014, 4, 4, 950, 5298421, 150);
-
-	cout << "\nprogramom vytvorene a inicializovane objekty:\n" << ASUS << "\n" << HP << endl;
-
-	cout << "\nhodnoty instan. premennych objektov triedy, vlozene pouzivatelom programu:\n";
-	for (i = 0; i < pocet; i++) {
-		cout << notebooky[i];
-		celkova_cena += notebooky[i].VratPredajCena();
-	}
-
-	celkova_cena += ASUS.VratPredajCena();
-	celkova_cena += HP.VratPredajCena();
-
-	int pocet4rocnych = 0;
-
-	for (i = 0; i < pocet; i++) 
-		if ((2025 - notebooky[i].VratRokVyroby()) <= 4) 
-			pocet4rocnych++;
-
-	if ((2025 - ASUS.VratRokVyroby()) <= 4) 
-		pocet4rocnych++;
-
-	if ((2025 - HP.VratRokVyroby()) <= 4) 
-		pocet4rocnych++;
-
-	cout << "\n\ncelkova predajna cena " << (pocet + 2) << " notebookov [Eur]:	" << celkova_cena;
-
-	priemer_cena = celkova_cena / pocet4rocnych;
-	
-	cout << "\npriemerna predajna cena 4-rocnych notebookov [Eur]:	" << priemer_cena << endl;
-
-	/*for (int j = 0; j < pocet; j++)
-		delete notebooky[j];*/
-
-	delete[] notebooky;
-
-	return 0;
-}
+(deftemplate film
+  (slot nazov (type STRING))
+  (slot reziser (type STRING))
+  (multislot herci (type SYMBOL) (default prazdne))
+  (slot rozpocet (type INTEGER) (range 1000 50000) (default 1000))
+  (slot rok (type INTEGER) (range 1965 2020))
+  (slot pocet-hercov (type INTEGER) (default 0))
+)
+
+(deffacts filmy
+  (film
+    (nazov "Perinbaba")
+    (reziser "Juraj Jakubisko")
+    (herci Stefan_Kvietik Magda_Vasarova Zdena_Studenkova Jan_Kroner Vlado_Muller)
+    (rozpocet 1000)
+    (rok 1971))
+
+  (film
+    (nazov "Dracie diery")
+    (reziser "Marek Tapak")
+    (herci Emilia_Vasarova Jan_Kolenik Juraj_Kukura Vlado_Muller Sona_Valentova Mikulas_Huba)
+    (rozpocet 49000)
+    (rok 1975))
+
+  (film
+    (nazov "Panelak")
+    (reziser "Stefan_Skrucany")
+    (herci Juraj_Loj Jozo_Vajda Zuzana_Kocurikova Magda_Vasarova)
+    (rozpocet 30000)
+    (rok 2012))
+
+  ; prázdny film
+  (film
+    (nazov "Prazdny film")
+    (reziser "")
+    (rok 2000))
+)
+
+;Načítanie 2 filmov od používateľa (jeden bez rozpočtu, druhý bez hercov)
+
+(defrule nacitaj_filmy
+  (not (nacitane))
+  =>
+  (assert (nacitane))
+  (assert (pomoc))
+  (printout t "Nazov filmu 1: ") (bind ?n1 (readline))
+  (printout t "Reziser: ")       (bind ?r1 (readline))
+  (printout t "Rok: ")           (bind ?rok1 (read))
+  (printout t "Herci: ") (bind $?h1 (explode$ (readline)))
+
+  (assert (film (nazov ?n1)(reziser ?r1)(herci $?h1)(rok ?rok1)))
+
+  (printout t "Nazov filmu 2: ") (bind ?n2 (readline))
+  (printout t "Reziser: ")       (bind ?r2 (readline))
+  (printout t "Rozpocet: ")      (bind ?roz (read))
+  (printout t "Rok: ")           (bind ?rok2 (read))
+
+  (assert (film (nazov ?n2)(reziser ?r2)(rozpocet ?roz)(rok ?rok2)))
+)
+
+;Počet hercov v každom filme (uložiť do šablóny)
+
+(defrule spocitaj-hercov
+  ?f <- (film (nazov ?n)(herci $?h))
+  (film (nazov ?n)(pocet-hercov 0))
+  =>
+  (modify ?f (pocet-hercov (length$ $?h)))
+)
+
+;Ak hrá Jozo Vajda → vlož ho do prázdneho filmu + režiséra
+
+(defrule najdi-joza
+  (film (nazov ?n) (reziser ?r) (herci $? Jozo_Vajda $?))
+  ?p <- (film (nazov "Prazdny film") (herci prazdne))
+  ?d <- (pomoc)
+  =>
+  (modify ?p (herci Jozo_Vajda)(reziser ?r))
+  (retract ?d)
+)
+
+;Vytvor zoznam hercov a vlož do načítaného filmu
+
+(defrule pridaj-hercov-do-filmu
+  ?f <- (film (herci prazdne))
+  (not (film (nazov "Prazdny film")))   
+  =>
+  (bind $?herci (create$ Marian_Labuda Milan_Lasica Maros_Kramar))
+  (bind $?herecky (create$ Zuzana_Kronerova Zuzana_Fialova))
+  (modify ?f (herci $?herci $?herecky))
+)
+
+;Priemerný rozpočet na film
+
+(defrule priemer-rozpoctu
+  (declare (salience -20))
+  =>
+  (bind ?suma 0)
+  (bind ?pocet 0)
+
+  (do-for-all-facts ((?f film))
+    (neq ?f:rozpocet nil)
+    (bind ?suma (+ ?suma ?f:rozpocet))
+    (bind ?pocet (+ ?pocet 1))
+  )
+
+  (printout t "Priemerny rozpocet = " (/ ?suma ?pocet) crlf)
+)
