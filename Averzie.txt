@@ -115,3 +115,4 @@
 
   (assert (priemer (student ?s) (hodnota (/ ?suma ?pocet))))
 )
+
